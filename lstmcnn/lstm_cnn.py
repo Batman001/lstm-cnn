@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 import tensorflow as tf
-from data_process import batch_iter,seq_length
+from data_process import batch_iter, seq_length
 from Parameters import Parameters as pm
 
 
