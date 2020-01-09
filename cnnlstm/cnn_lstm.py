@@ -4,11 +4,13 @@ import tensorflow as tf
 from data_process import batch_iter
 from Parameters import Parameters as pm
 
+
 class CnnLstm(object):
     def __init__(self):
         self.input_x = tf.placeholder(tf.int32, [None, pm.seq_length], name='input_x')
         self.input_y = tf.placeholder(tf.float32, [None, pm.num_classes], name='input_y')
         self.dropout_keep_prob = tf.placeholder(tf.float32, name='dropout_keep_prob')
+        self.global_step = tf.Variable(0, trainable=False, name='global_step')
         self.cnn_lstm()
 
     def cnn_lstm(self):
@@ -17,6 +19,8 @@ class CnnLstm(object):
             self.embedding = tf.get_variable('embedding', shape=[pm.vocab_size, pm.embedding_dim],
                                              initializer=tf.constant_initializer(pm.pre_training))
             embedding_input = tf.nn.embedding_lookup(self.embedding, self.input_x)
+            embedding_input = tf.expand_dims(embedding_input, -1)
+            print("embedding层输入的shape为：", embedding_input)
 
         # convolution layer + max pooling layer(per filter)
         with tf.name_scope('CNN'):
@@ -36,7 +40,9 @@ class CnnLstm(object):
             # combining pooled features
             num_filter_total = pm.num_filters * len(pm.filter_size)
             self.h_pool = tf.concat(pooled_outputs, 3)
+            print("CNN的输出层为：", self.h_pool)
             self.h_pool_flat = tf.reshape(self.h_pool, [-1, num_filter_total])
+            print("CNN的输出层拉平为：", self.h_pool_flat)
 
         # dropout layer
         with tf.name_scope('dropout'):
@@ -63,6 +69,13 @@ class CnnLstm(object):
         with tf.name_scope('loss'):
             self.losses = tf.nn.softmax_cross_entropy_with_logits(logits=self.scores, labels=self.input_y)
             self.loss = tf.reduce_mean(self.losses, name='loss')
+
+        with tf.name_scope('optimizer'):
+            optimizer = tf.train.AdadeltaOptimizer(pm.learning_rate)
+            gradients, variables = zip(*optimizer.compute_gradients(self.loss))
+            # 让权重的更新限制在一个合适的范围
+            gradients, _ = tf.clip_by_global_norm(gradients, pm.clip)
+            self.optimizer = optimizer.apply_gradients(zip(gradients, variables), global_step=self.global_step)
 
         with tf.name_scope('accuracy'):
             self.correct_pred = tf.equal(tf.argmax(self.predictions, 1), tf.argmax(self.input_y, 1))

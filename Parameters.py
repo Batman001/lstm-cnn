@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 class Parameters(object):
 
-    embedding_dim =100
+    embedding_dim = 100
     vocab_size = 10000
     pre_training = None
 
