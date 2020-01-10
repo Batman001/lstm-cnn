@@ -4,7 +4,7 @@ import tensorflow as tf
 from Parameters import Parameters as pm
 from data_process import read_category, get_word_id, get_word2vec, \
     process, batch_iter, build_vocab_vector
-from cnn.CNN import TextCNN
+from lstm.LSTM import BiLSTM
 
 
 def train():
@@ -61,6 +61,6 @@ if __name__ == "__main__":
     word_ids = get_word_id(pm.vocab_name)
     pm.vocab_size = len(word_ids)
     pm.pre_training = get_word2vec(pm.vector_word_npz)
-    model = TextCNN()
+    model = BiLSTM()
 
     train()

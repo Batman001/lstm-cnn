@@ -8,7 +8,7 @@ class Parameters(object):
     seq_length = 300
     num_classes = 10
     hidden_dim = 128
-    filter_size = [2, 3, 4]
+    filter_sizes = [2, 3, 4]
     num_filters = 128
 
     keep_prob = 0.5
@@ -20,6 +20,11 @@ class Parameters(object):
 
     num_epochs = 3
     batch_size = 64
+
+    l2RegLambda = 0.02
+
+    # LSTM hyper parameters
+    hidden_sizes = [256, 256]  # 单层LSTM结构的神经元个数
 
     # train data
     train_filename = './data/cnews.train.txt'

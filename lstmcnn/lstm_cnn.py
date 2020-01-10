@@ -32,7 +32,7 @@ class LstmCnn(object):
             outputs = tf.expand_dims(output, -1)  # [batch_size,seq_length, hidden_dim, 1]
             print("测试经过expand的dim为：", outputs)
             pooled_outputs = []
-            for i, filter_size in enumerate(pm.filter_size):
+            for i, filter_size in enumerate(pm.filter_sizes):
                 filter_shape = [filter_size, pm.hidden_dim, 1, pm.num_filters]
                 w = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name='w')
                 # 每一个filters进行bias的添加 卷积操作
@@ -48,19 +48,20 @@ class LstmCnn(object):
             output_ = tf.concat(pooled_outputs, 3)
             print("CNN层的输出1为:", output_)
             # 拉平池化之后的矩阵 用于连接全连接层
-            self.output = tf.reshape(output_, shape=[-1, 3*pm.num_filters])
+            self.output = tf.reshape(output_, shape=[-1, len(pm.filter_sizes)*pm.num_filters])
             print("CNN层的输出2为:", self.output)
 
         with tf.name_scope('output'):
             out_final = tf.nn.dropout(self.output, keep_prob=self.keep_pro)
             # 全连接层
-            o_w = tf.Variable(tf.truncated_normal([3*pm.num_filters, pm.num_classes], stddev=0.1), name='o_w')
+            o_w = tf.Variable(tf.truncated_normal([len(pm.filter_sizes)*pm.num_filters, pm.num_classes], stddev=0.1), name='o_w')
             o_b = tf.Variable(tf.constant(0.1, shape=[pm.num_classes]), name='o_b')
             self.logits = tf.matmul(out_final, o_w) + o_b
             self.predict = tf.argmax(tf.nn.softmax(self.logits), 1, name='score')
 
         with tf.name_scope('loss'):
-            cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=self.logits, labels=self.input_y)
+            cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.argmax(self.input_y,1),
+                                                                           logits=self.logits)
             self.loss = tf.reduce_mean(cross_entropy)
 
         with tf.name_scope('optimizer'):
